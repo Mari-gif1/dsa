@@ -3,18 +3,36 @@
 #include <algorithm>
 #include <iostream>
 #include <queue>
+#include <stack>
+#include <algorithm>
+
 
 struct Node {
 	int value;
 	Node* left;
 	Node* right;
-	Node* parent {nullptr};
+	Node* parent{ nullptr };
 	Node(int value_, Node* left_ = nullptr, Node* right_ = nullptr) : value(value_), left(left_), right(right_) {}
 	void setParent(Node* parent_)
 	{
 		parent = parent_;
 	}
 };
+
+static Node* batch_construction(const std::vector<int>& vec, int left, int right)
+{
+	if (left == right)
+		return new Node(vec[left]);
+	int median = (left + right) / 2;
+	if (median == left)
+		return new Node(vec[left]);
+	if (median == right)
+		return new Node(vec[right]);
+	Node* root = new Node(vec[median]);
+	root->left = batch_construction(vec, left, median - 1);
+	root->right = batch_construction(vec, median + 1, right);
+	return root;
+}
 
 class binaryTree
 {
@@ -66,6 +84,34 @@ public:
 	void swap_tree_iteratively()
 	{
 		swap_tree_iteratively(root);
+	}
+
+	Node* predecessor(Node* node)
+	{
+		// has left child
+		if (node->left)
+		{ 
+			Node* temp = node->left;
+			while (temp->right)
+				temp = temp->right;
+			return temp;
+		}
+		// doesn't have left child
+		Node* temp = node;
+		while (temp->parent && temp == temp->parent->left)
+			temp = temp->parent;
+		return temp->parent;
+	}
+
+	double balanceness()
+	{
+		auto res = balanceness(root);
+		return double(res.second)/res.first;
+	}
+
+	void pre_order_iterative()
+	{
+		pre_order_iterative(root);
 	}
 
 private:
@@ -169,7 +215,7 @@ private:
 					root->parent->left = root->right;
 					root->right->parent = root->parent;
 				}
-					
+
 				else
 				{
 					root->parent->right = root->right;
@@ -221,7 +267,7 @@ private:
 	void swap_tree_iteratively(Node* root)
 	{
 		std::queue<Node*> queue;
-		if(root)
+		if (root)
 			queue.push(root);
 		while (!queue.empty())
 		{
@@ -232,6 +278,32 @@ private:
 			if (front->right)
 				queue.push(front->right);
 			queue.pop();
+		}
+	}
+
+	std::pair<int, int> balanceness(Node* root)
+	{
+		if(!root) return std::pair<int, int>(INT_MAX, INT_MIN);
+		if (!root->left && !root->right) return std::pair<int, int>(0, 0);
+		std::pair<int, int> pr1 = balanceness(root->right);
+		std::pair<int, int> pr2 = balanceness(root->left);
+		return std::pair<int, int>(std::min(pr1.first, pr2.first) + 1, std::max(pr1.second, pr2.second) + 1);
+	}
+
+	void pre_order_iterative(Node* root)
+	{
+		std::stack<Node*> st;
+		if (root)
+			st.push(root);
+		while (!st.empty())
+		{
+			auto top = st.top();
+			st.pop();
+			std::cout << top->value << " ";
+			if (top->right)
+				st.push(top->right);
+			if (top->left)
+				st.push(top->left);
 		}
 	}
 };
@@ -256,13 +328,12 @@ int main()
 	node20->setParent(node34);
 	node38->setParent(node34);
 	binaryTree bTree(node34);
+	bTree.insert(36);
+	bTree.insert(36);
 	bTree.print();
+
 	std::cout << '\n';
-	bTree.delete_val(38);
-	bTree.delete_val(35);
-	bTree.delete_val(34);
-	bTree.delete_val(27);
-	bTree.swap_tree_iteratively();
-	bTree.print();
+	std::cout<<bTree.balanceness()<<std::endl;
+	bTree.pre_order_iterative();
 	return 0;
 }
